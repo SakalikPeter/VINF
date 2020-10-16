@@ -80,5 +80,5 @@ num = 1 # index number
 # indexing by ES
 for key in all_labels:
     for item in all_labels[key]:
-        res = es.index(index='entity_idx', id=num, body={key: item})
+        res = es.index(index='entity_idx', id=num, body={'label': key, 'pattern': item})
         num+=1
