@@ -1,14 +1,7 @@
 from elasticsearch import Elasticsearch
+from elasticsearch import helpers
 import re
 
-# files with entities types
-typefiles = ['../data_train/yago-wd-full-types.nt', '../data_train/yago-wd-simple-types.nt']
-# file with labeles
-labelfile = '../data_train/yago-wd-labels.nt'
-
-# dictionaries to save the data
-all_entities = {}
-all_labels = {}
 
 def find_entity(line):
     """
@@ -21,7 +14,7 @@ def find_entity(line):
     entity_name = parser[0][1:-1]
     entity_type = parser[2][1:-1]
 
-    return entity_name, entity_type
+    return entity_type, entity_name
 
 
 def find_label(line):
@@ -49,36 +42,77 @@ def insert_dict(dict, key, value):
         dict[key] = {value}
 
 
-# reading files with entities types line by line
-for filename in typefiles:
-    with open(filename) as file:
-        line = file.readline()
+def main():
+    directory = '../data/'
+    # files with entities types
+    typefiles = ['yago-wd-full-types.nt', 'yago-wd-simple-types.nt']
+    # file with labeles
+    labelfiles = ['yago-wd-labels.nt']
 
-        while line:
-            entity_name, entity_type = find_entity(line)
-            insert_dict(all_entities, entity_type, entity_name)
+    # dictionaries to save the data
+    all_types = {}
+    all_entities = {}
+
+    # reading files with entities types line by line
+    for filename in typefiles:
+        with open(f"{directory}{filename}") as file:
             line = file.readline()
 
-
-# reading file with labels
-with open(labelfile) as file:
-    line = file.readline()
-    while line:
-        entity, label = find_label(line)
-
-        for key in all_entities:
-            if entity in all_entities[key]:
-                insert_dict(all_labels, key, label)
-                break
-
-        line = file.readline()
+            while line:
+                entity_type, entity_name = find_entity(line)
+                # save types for searching labels
+                insert_dict(all_types, entity_type, entity_name)
+                # save entities for indexing
+                insert_dict(all_entities, entity_type.replace('_', ' '), entity_name.replace('_', ' '))
+                line = file.readline()
 
 
-es = Elasticsearch()
-num = 1 # index number
+    # reading files with labels line by line
+    for filename in labelfiles:
+        with open(f"{directory}{filename}") as file:
+            line = file.readline()
 
-# indexing by ES
-for key in all_labels:
-    for item in all_labels[key]:
-        res = es.index(index='entity_idx', id=num, body={'label': key, 'pattern': item})
-        num+=1
+            while line:
+                entity_type, entity_name = find_label(line)
+
+                for key in all_types:
+                    if entity_type in all_types[key]:
+                        # save entities for indexing
+                        insert_dict(all_entities, key.replace('_', ' '), entity_name)
+                        break
+
+                line = file.readline()
+
+
+    es = Elasticsearch()
+    num = 1 # index number
+
+    # indexing by ES
+    for key in all_entities:
+        actions = []
+        print(f"indexing entity {key}")
+
+        for item in all_entities[key]:
+            action = {
+                "_index": "entity_index",
+                "_id": num,
+                "_source": {
+                    'label': key,
+                    'pattern': item
+                }
+            }
+        
+            num += 1 
+            actions.append(action)
+
+            # index after 0,5M records
+            if not num % 500000:
+                helpers.bulk(es, actions)
+                actions = []
+        
+        # index batch
+        helpers.bulk(es, actions)
+
+
+if __name__ == "__main__":
+  main()
