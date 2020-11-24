@@ -1,13 +1,15 @@
-import nltk
-import re
+from beautifultable import BeautifulTable
 from elasticsearch import Elasticsearch
 import textdistance
-from beautifultable import BeautifulTable
+import nltk
+import re
 
 def search(label, pattern, es):
   """
   Search in ES
-  input: Human, Tom Cruise, (ES object)
+  input:  label:Human
+          pattern: Tom Cruise
+          es: (ES object)
   output: (query response)
   """
   search_param = {"query": {"bool": {"must": [{"match": {"label": {'query': label, 'fuzziness': 2}}}, {"match": {"pattern": {'query': pattern, 'fuzziness': 2}}}]}}}
@@ -17,7 +19,7 @@ def search(label, pattern, es):
 def find(words):
   """
   Parse words from pos_tags
-  input: (NP The/DT First/JJ sentence/NN)
+  input:  words: (NP The/DT First/JJ sentence/NN)
   output: The First sentence
   """
   words = re.findall('[a-zA-Z0-9]*/', words)
@@ -27,7 +29,9 @@ def find(words):
 def similarity(type, a, b):
   """
   String similarity metrics
-  input: hamming (similarity type), John (string 1), John Snow (string 2)
+  input:  type: hamming (similarity type)
+          a: John (string 1)
+          b: John Snow (string 2)
   output: 0.73 (probability)
   """
   if type == 'hamming':
@@ -51,9 +55,10 @@ def similarity(type, a, b):
 def evaluate(entity_list, similarity_type):
   """
   Evaluating finded outputs, sort by similarity and save to file
-  input: (ouput from ES), jaccard
-  output: 
+  input:  entity_list: (ouput from ES)
+          similarity_type: jaccard
   """
+  # output table directory
   directory = '../output/'
   f = open(f"{directory}{similarity_type}.txt", "w")
   
@@ -72,7 +77,6 @@ def evaluate(entity_list, similarity_type):
     
     f.write(str(table))
     f.write('\n\n')
-
 
 
 def main():
@@ -117,4 +121,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-# https://itnext.io/string-similarity-the-basic-know-your-algorithms-guide-3de3d7346227
