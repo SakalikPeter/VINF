@@ -1,0 +1,5 @@
+The Mona Lisa is a 16th century oil painting created by Leonardo. 
+It's held at the Louvre in Paris. 
+Python is an interpreted, high-level and general-purpose programming language. 
+The Colosseum is the main symbol of Rome. 
+It is an imposing construction that, with almost 2,000 years of history, will bring you back in time to discover the way of life in the Roman Empire.

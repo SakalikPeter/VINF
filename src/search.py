@@ -87,11 +87,9 @@ def main():
   # grammar rule
   grammar = r"""NP: {<DT|CD|FW|JJ|NN.*>+}"""
   # type
-  entity_type = 'Humn'
+  entity_type = input("Enter entity: ")
   # text 
-  sentence_data = """
-  The First sentence is about Harald Ringstorff. The Second: you can learn Python,Django and Data Ananlysis here.
-  """
+  sentence_data = open("../input.txt", "r").read()
  
   es = Elasticsearch()
 
